@@ -7,7 +7,9 @@ load_dotenv()
 GEMINI_MODEL_INTENT = "gemini-3.5-flash-lite"
 GEMINI_MODEL_EXPLANATION = "gemini-3.5-flash-lite"
 
-DATA_PATH = os.path.join("data", "SAML-D.csv")
+# demo default is the account-preserving sample; point DATA_PATH at
+# data/SAML-D.csv to run on the full 9.5M-row dataset
+DATA_PATH = os.getenv("DATA_PATH", os.path.join("data", "SAML-D-sample.csv"))
 
 STRUCTURING_THRESHOLD = 10000
 FEATURE_WINDOW_HOURS = 48
