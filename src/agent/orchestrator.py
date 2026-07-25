@@ -56,7 +56,10 @@ def _offline_explanations(df: pd.DataFrame, top_n: int) -> list:
     subset = df.sort_values("anomaly_score", ascending=False).head(top_n)
     for _, row in subset.iterrows():
         reasons = []
-        if row.get("near_threshold_flag"):
+        if row.get("near_threshold_count", 0) >= 3:
+            reasons.append(f"{int(row['near_threshold_count'])} transactions just under the 10k "
+                           "reporting threshold (structuring pattern)")
+        elif row.get("near_threshold_flag"):
             reasons.append("amount just under the 10k reporting threshold")
         if abs(row.get("amount_zscore", 0)) > 2.5:
             reasons.append(f"amount {abs(row['amount_zscore']):.1f} std devs from this sender's norm")
@@ -123,7 +126,14 @@ def run_agent(user_query: str, df: pd.DataFrame) -> dict:
             context["df"] = classify_risk(context["df"], **params)
             tool_log.append("risk_classification")
         elif tool_name == "explanation":
-            context["explanations"] = _explanations(context["df"], params.get("top_n", 5))
+            edf = context["df"]
+            # pattern-focused queries rank by that pattern's evidence, not
+            # by generic anomaly score
+            if parsed_intent.get("pattern_type") == "structuring" and "near_threshold_count" in edf:
+                focused = edf[edf["near_threshold_count"] >= 3]
+                if len(focused):
+                    edf = focused
+            context["explanations"] = _explanations(edf, params.get("top_n", 5))
             tool_log.append("explanation")
 
     output = format_final_output(user_query, parsed_intent, tool_log, context)

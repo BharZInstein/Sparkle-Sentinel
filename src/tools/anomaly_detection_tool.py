@@ -4,7 +4,8 @@ from sklearn.preprocessing import StandardScaler
 
 FEATURE_COLS = [
     "txn_frequency", "rolling_amount_sum", "amount_zscore",
-    "txn_velocity", "near_threshold_flag", "cross_border_flag"
+    "txn_velocity", "near_threshold_flag", "near_threshold_count",
+    "cross_border_flag"
 ]
 
 
@@ -15,6 +16,7 @@ def detect_anomalies(df: pd.DataFrame, method: str = "hybrid",
         "txn_frequency": 10,
         "amount_zscore": 2.5,
         "txn_velocity": 3,
+        "near_threshold_count": 3,  # repeated sub-threshold txns = structuring
     }
 
     cross_border_rate = data["cross_border_flag"].mean()
@@ -25,10 +27,12 @@ def detect_anomalies(df: pd.DataFrame, method: str = "hybrid",
         (data["amount_zscore"].abs() > thresholds["amount_zscore"]).astype(int) +
         (data["txn_velocity"] > thresholds["txn_velocity"]).astype(int) +
         data["near_threshold_flag"] +
+        (data["near_threshold_count"] >= thresholds["near_threshold_count"]).astype(int) +
         data["cross_border_flag"] * cross_border_weight
     )
+    max_rule_score = 5 + cross_border_weight
     data["rule_score"] = rule_score
-    data["anomaly_score"] = data["rule_score"] / (4 + cross_border_weight)
+    data["anomaly_score"] = data["rule_score"] / max_rule_score
 
     if method == "rule":
         return data
@@ -45,5 +49,5 @@ def detect_anomalies(df: pd.DataFrame, method: str = "hybrid",
         data["anomaly_score"] = data["iso_score"]
         return data
 
-    data["anomaly_score"] = 0.5 * (data["rule_score"] / 5.0) + 0.5 * data["iso_score"]
+    data["anomaly_score"] = 0.5 * (data["rule_score"] / max_rule_score) + 0.5 * data["iso_score"]
     return data

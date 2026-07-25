@@ -44,5 +44,9 @@ def engineer_features(df: pd.DataFrame, pattern_type: str = "generic",
         data["Sender_bank_location"] != data["Receiver_bank_location"]
     ).astype(int)
 
+    # structuring signature: one near-threshold txn is unremarkable, a sender
+    # repeating them is the classic pattern — count them per sender
+    data["near_threshold_count"] = data.groupby("Sender_account")["near_threshold_flag"].transform("sum")
+
     data = data.drop(columns=["_row_id"])
     return data
