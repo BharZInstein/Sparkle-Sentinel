@@ -9,7 +9,7 @@ for evaluation only, the detector never reads them):
                      followed by a large cross-border transfer out
   - Rapid_Movement:  high-velocity in/out burst within hours
 
-Usage: python scripts/generate_synthetic.py [--rows 20000] [--out data/SAML-D.csv]
+Usage: python scripts/generate_synthetic.py [--rows 20000] [--out data/synthetic_eval.csv]
 """
 import argparse
 from datetime import datetime, timedelta
@@ -99,7 +99,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--rows", type=int, default=20_000)
     ap.add_argument("--accounts", type=int, default=600)
-    ap.add_argument("--out", default="data/SAML-D.csv")
+    ap.add_argument("--out", default="data/synthetic_eval.csv")
     ap.add_argument("--seed", type=int, default=42)
     args = ap.parse_args()
 

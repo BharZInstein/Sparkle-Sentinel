@@ -24,7 +24,7 @@ STRUCTURING_ACCOUNTS = {str(90_000_100 + i) for i in range(6)}
 
 
 def main():
-    df = clean_dataset(load_dataset())
+    df = clean_dataset(load_dataset("data/synthetic_eval.csv"))
     failures = []
 
     for q in QUERIES:
