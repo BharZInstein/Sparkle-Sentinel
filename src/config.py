@@ -1,5 +1,9 @@
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 GEMINI_MODEL_INTENT = "gemini-3.5-flash-lite"
 GEMINI_MODEL_EXPLANATION = "gemini-3.5-flash-lite"
 
