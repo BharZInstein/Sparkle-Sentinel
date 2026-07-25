@@ -145,7 +145,7 @@ def _parse_offline(query: str) -> dict:
                 "pattern_type": pattern, "requires_eda": False,
             })
             return parsed
-    if any(w in q for w in ["suspicious activity", "anomal", "launder", "flag"]):
+    if any(w in q for w in ["flag high-risk", "flag risky", "top suspicious"]):
         parsed.update({"intent": "pattern_search", "scope": "filtered",
                        "pattern_type": "generic", "requires_eda": False})
 
