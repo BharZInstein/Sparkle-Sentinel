@@ -36,6 +36,14 @@ def clean_dataset(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def sample_dataset(df: pd.DataFrame, n: int = 20000, seed: int = 42) -> pd.DataFrame:
+    """Sample by sender account, keeping every transaction of each sampled
+    account. Random row-sampling would scatter per-account behaviour and
+    destroy the patterns the detector looks for (a structuring ring's 9
+    deposits would lose 8 of them)."""
     if n >= len(df):
         return df
-    return df.sample(n, random_state=seed)
+    counts = df["Sender_account"].value_counts()
+    shuffled = counts.sample(frac=1, random_state=seed)
+    n_accounts = max(1, int((shuffled.cumsum() <= n).sum()) + 1)
+    keep = shuffled.index[:n_accounts]
+    return df[df["Sender_account"].isin(keep)]

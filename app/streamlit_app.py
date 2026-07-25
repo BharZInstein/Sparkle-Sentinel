@@ -7,14 +7,14 @@ import plotly.express as px
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from src.agent.orchestrator import run_agent
-from src.data_loader import load_dataset
+from src.data_loader import load_dataset, clean_dataset, sample_dataset
 
-st.set_page_config(page_title="AML Suspicious Activity Agent", layout="wide")
-st.title("AI-Powered Suspicious Activity Detection Agent")
+st.set_page_config(page_title="Sparkle Sentinel", layout="wide")
+st.title("Sparkle Sentinel — Suspicious Activity Detection Agent")
 
 @st.cache_data
 def get_data():
-    return load_dataset()
+    return clean_dataset(load_dataset())
 
 df = get_data()
 
@@ -27,7 +27,7 @@ sample_size = st.sidebar.slider("Sample size for demo speed", 1000, 50000, 20000
 
 if st.button("Run Agent") and query:
     with st.spinner("Agent parsing intent and executing plan..."):
-        sample_df = df.sample(sample_size, random_state=42)
+        sample_df = sample_dataset(df, sample_size)
         result = run_agent(query, sample_df)
 
     st.subheader("Execution Summary")
