@@ -67,6 +67,10 @@ def _offline_explanations(df: pd.DataFrame, top_n: int) -> list:
             reasons.append(f"{int(row['txn_frequency'])} txns by this sender")
         if row.get("txn_velocity", 0) > 3:
             reasons.append("burst-level transaction velocity")
+        if row.get("cash_txn_count", 0) >= 25:
+            reasons.append(f"{int(row['cash_txn_count'])} cash deposits/withdrawals by this sender")
+        if row.get("repeated_amount_count", 0) >= 4:
+            reasons.append(f"{int(row['repeated_amount_count'])} near-identical amounts repeated (layering pattern)")
         if row.get("cross_border_flag"):
             reasons.append(f"cross-border ({row.get('Sender_bank_location')} to {row.get('Receiver_bank_location')})")
         out.append({
@@ -133,6 +137,14 @@ def run_agent(user_query: str, df: pd.DataFrame) -> dict:
                 focused = edf[edf["near_threshold_count"] >= 3]
                 if len(focused):
                     edf = focused
+            # risk-level requests ("show 5 medium risk txns") filter to that band
+            wanted = (parsed_intent.get("risk_level") or "").title()
+            if wanted in ("High", "Medium", "Low") and "risk_level" in edf:
+                banded = edf[edf["risk_level"] == wanted]
+                if len(banded):
+                    edf = banded
+                else:
+                    context["error"] = f"No {wanted}-risk transactions found for this query"
             context["explanations"] = _explanations(edf, params.get("top_n", 5))
             tool_log.append("explanation")
 

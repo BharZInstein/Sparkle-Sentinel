@@ -43,6 +43,8 @@ def build_execution_plan(parsed_intent: dict) -> list:
         plan.append({"tool": "risk_classification", "params": {}})
 
     if parsed_intent.get("requires_explanation"):
+        requested = parsed_intent.get("top_n")
+        default_n = 3 if scope == "single_entity" else 5
         plan.append({"tool": "explanation",
-                     "params": {"top_n": 3 if scope == "single_entity" else 5}})
+                     "params": {"top_n": min(int(requested), 25) if requested else default_n}})
     return plan
