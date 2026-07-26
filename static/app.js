@@ -41,8 +41,12 @@ function drawVolume(days) {
     labels += `<text x="${x(i)}" y="${H - 8}" text-anchor="middle" font-size="10" fill="#8a897f">${days[i].date}</text>`;
   }
   const pts = days.map((d, i) => `${x(i).toFixed(1)},${y(d.count).toFixed(1)}`);
-  const line = `<polyline points="${pts.join(" ")}" fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round"/>`;
-  const area = `<polygon points="${padL},${padT + ih} ${pts.join(" ")} ${W - padR},${padT + ih}" fill="rgba(57,135,229,0.10)"/>`;
+  const defs = `<defs><linearGradient id="volgrad" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="rgba(57,135,229,0.32)"/>
+      <stop offset="1" stop-color="rgba(57,135,229,0)"/>
+    </linearGradient></defs>`;
+  const line = defs + `<polyline points="${pts.join(" ")}" fill="none" stroke="#3987e5" stroke-width="2" stroke-linejoin="round"/>`;
+  const area = `<polygon points="${padL},${padT + ih} ${pts.join(" ")} ${W - padR},${padT + ih}" fill="url(#volgrad)"/>`;
   const hover = `<line id="vol-cross" y1="${padT}" y2="${padT + ih}" stroke="rgba(255,255,255,0.25)" stroke-dasharray="3 3" visibility="hidden"/>
                  <circle id="vol-dot" r="4" fill="#3987e5" stroke="#121211" stroke-width="2" visibility="hidden"/>`;
   const svg = $("vol-chart");
@@ -138,12 +142,12 @@ function render(res) {
 
   const invoked = res.tools_invoked || [];
   $("plan-chips").innerHTML = invoked
-    .map((t) => `<span class="plan-step">${t}</span>`)
-    .join('<span class="plan-arrow">→</span>');
+    .map((t, i) => `<span class="plan-step" style="animation-delay:${i * 0.12}s"><span class="n">${i + 1}</span>${t}</span>`)
+    .join('<span class="plan-arrow" style="animation-delay:0.1s">→</span>');
   const invokedBase = invoked.map((t) => t.split("[")[0]);
   const skipped = ANALYSIS_TOOLS.filter((t) => !invokedBase.includes(t));
-  $("plan-skipped").textContent = skipped.length
-    ? "skipped for this query: " + skipped.join(", ")
+  $("plan-skipped").innerHTML = skipped.length
+    ? "agent skipped: " + skipped.map((t) => `<span class="skip">${t}</span>`).join(" ")
     : "full analysis chain invoked";
 
   // flags
@@ -160,12 +164,12 @@ function render(res) {
       .map(
         (f) => `<div class="flag flag-${f.risk_level}">
           <div class="flag-head">
-            <span class="flag-route">${f.Sender_account} → ${f.Receiver_account}</span>
+            <span class="flag-route">${f.Sender_account}<span class="arr">→</span>${f.Receiver_account}</span>
             <span class="flag-amount">${fmt(f.Amount)}</span>
             <span class="badge badge-${f.risk_level}">${f.risk_level === "High" ? "▲" : f.risk_level === "Medium" ? "◆" : "●"} ${f.risk_level}</span>
           </div>
           <div class="flag-expl">${f.explanation}</div>
-          <div class="flag-action">recommended action: ${f.recommended_action}</div>
+          <div class="flag-action">recommended action: <b>${f.recommended_action}</b></div>
         </div>`
       )
       .join("");

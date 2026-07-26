@@ -8,14 +8,12 @@
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>✦</text></svg>">
 </head>
 <body>
+<div class="bg-glow" aria-hidden="true"></div>
 
 <header class="topbar">
   <div class="brand">
     <span class="brand-mark">✦</span>
-    <div>
-      <div class="brand-name">SPARKLE SENTINEL</div>
-      <div class="brand-sub">Agentic Suspicious Activity Detection</div>
-    </div>
+    <span class="brand-name">SPARKLE&nbsp;SENTINEL</span>
   </div>
   <div class="topbar-right">
     <span id="parser-pill" class="pill pill-muted">agent idle</span>
@@ -24,12 +22,74 @@
 </header>
 
 <main>
+  <!-- hero -->
+  <section class="hero">
+    <div class="eyebrow">AGENTIC AML MONITORING</div>
+    <h1>Ask your transaction data <span class="grad">anything</span>.</h1>
+    <p class="hero-sub">One agent. 500K real banking transactions. It plans its own analysis —
+       and only runs the tools your question needs.</p>
+
+    <div class="query-shell">
+      <div class="query-row">
+        <span class="query-icon">⌕</span>
+        <input id="query-input" type="text" spellcheck="false" autocomplete="off"
+               placeholder='Try "Find structuring patterns in the last 30 days"'>
+        <button id="run-btn"><span>Run agent</span></button>
+      </div>
+      <div id="agent-status" class="agent-status" hidden>
+        <span class="spinner"></span><span id="agent-status-text">Parsing intent…</span>
+      </div>
+    </div>
+
+    <div class="chips" id="suggest-chips">
+      <button class="chip">Find structuring patterns in the last 30 days</button>
+      <button class="chip">Which customers made 10+ transactions under $10,000?</button>
+      <button class="chip">Is account 9285172899 suspicious?</button>
+      <button class="chip">Analyse this dataset for suspicious activity</button>
+    </div>
+  </section>
+
   <!-- KPI row -->
-  <section class="kpi-row" id="kpi-row">
+  <section class="kpi-row">
     <div class="kpi"><div class="kpi-label">Transactions monitored</div><div class="kpi-value" id="kpi-txns">—</div></div>
     <div class="kpi"><div class="kpi-label">Sender accounts</div><div class="kpi-value" id="kpi-accounts">—</div></div>
     <div class="kpi"><div class="kpi-label">Cross-border share</div><div class="kpi-value" id="kpi-xb">—</div></div>
     <div class="kpi"><div class="kpi-label">Coverage window</div><div class="kpi-value kpi-small" id="kpi-dates">—</div></div>
+  </section>
+
+  <!-- results -->
+  <section id="results" hidden>
+    <div class="card reveal">
+      <div class="card-head"><h2>Execution summary</h2><span id="exec-meta" class="muted"></span></div>
+      <div class="exec-grid">
+        <div class="exec-cell"><div class="kpi-label">Detected intent</div><div id="exec-intent" class="exec-val">—</div></div>
+        <div class="exec-cell"><div class="kpi-label">Pattern</div><div id="exec-pattern" class="exec-val">—</div></div>
+        <div class="exec-cell"><div class="kpi-label">Working set</div><div id="exec-rows" class="exec-val">—</div></div>
+        <div class="exec-cell"><div class="kpi-label">Parser</div><div id="exec-parser" class="exec-val">—</div></div>
+      </div>
+      <div class="plan-label kpi-label">Execution plan — decided by the agent for this query</div>
+      <div class="plan" id="plan-chips"></div>
+      <div class="plan-skipped" id="plan-skipped"></div>
+    </div>
+
+    <div class="card reveal" id="risk-card" hidden>
+      <div class="card-head"><h2>Flagged items</h2><div class="risk-pills" id="risk-pills"></div></div>
+      <div id="flags"></div>
+    </div>
+
+    <div class="card reveal" id="agg-card" hidden>
+      <div class="card-head"><h2>Aggregation result</h2><span class="muted" id="agg-note"></span></div>
+      <div class="scroll-x"><table id="agg-table"></table></div>
+    </div>
+
+    <div class="card reveal" id="eda-card" hidden>
+      <div class="card-head"><h2>Dataset profile (EDA)</h2></div>
+      <div class="exec-grid" id="eda-stats"></div>
+      <div class="plan-label kpi-label" id="pt-label" hidden>Payment type distribution</div>
+      <div id="pt-bars"></div>
+    </div>
+
+    <div class="card notice reveal" id="error-card" hidden><span id="error-text"></span></div>
   </section>
 
   <!-- volume chart -->
@@ -47,61 +107,7 @@
     </details>
   </section>
 
-  <!-- query -->
-  <section class="card query-card">
-    <div class="card-head"><h2>Ask the agent</h2></div>
-    <div class="query-row">
-      <input id="query-input" type="text" spellcheck="false"
-             placeholder='e.g. "Find structuring patterns in the last 30 days"'>
-      <button id="run-btn">Run agent</button>
-    </div>
-    <div class="chips" id="suggest-chips">
-      <button class="chip">Find structuring patterns in the last 30 days</button>
-      <button class="chip">Which customers made 10+ transactions under $10,000?</button>
-      <button class="chip">Is account 9285172899 suspicious?</button>
-      <button class="chip">Analyse this dataset for suspicious activity</button>
-    </div>
-    <div id="agent-status" class="agent-status" hidden>
-      <span class="spinner"></span><span id="agent-status-text">Parsing intent…</span>
-    </div>
-  </section>
-
-  <!-- results -->
-  <section id="results" hidden>
-    <div class="card">
-      <div class="card-head"><h2>Execution summary</h2><span id="exec-meta" class="muted"></span></div>
-      <div class="exec-grid">
-        <div><div class="kpi-label">Detected intent</div><div id="exec-intent" class="exec-val">—</div></div>
-        <div><div class="kpi-label">Pattern</div><div id="exec-pattern" class="exec-val">—</div></div>
-        <div><div class="kpi-label">Working set</div><div id="exec-rows" class="exec-val">—</div></div>
-        <div><div class="kpi-label">Parser</div><div id="exec-parser" class="exec-val">—</div></div>
-      </div>
-      <div class="plan-label kpi-label">Execution plan — tools invoked by the agent</div>
-      <div class="plan" id="plan-chips"></div>
-      <div class="plan-skipped muted" id="plan-skipped"></div>
-    </div>
-
-    <div class="card" id="risk-card" hidden>
-      <div class="card-head"><h2>Flagged items</h2><div class="risk-pills" id="risk-pills"></div></div>
-      <div id="flags"></div>
-    </div>
-
-    <div class="card" id="agg-card" hidden>
-      <div class="card-head"><h2>Aggregation result</h2><span class="muted" id="agg-note"></span></div>
-      <div class="scroll-x"><table id="agg-table"></table></div>
-    </div>
-
-    <div class="card" id="eda-card" hidden>
-      <div class="card-head"><h2>Dataset profile (EDA)</h2></div>
-      <div class="exec-grid" id="eda-stats"></div>
-      <div class="plan-label kpi-label" id="pt-label" hidden>Payment type distribution</div>
-      <div id="pt-bars"></div>
-    </div>
-
-    <div class="card notice" id="error-card" hidden><span id="error-text"></span></div>
-  </section>
-
-  <footer class="muted">Sparkle Sentinel · hybrid rules + IsolationForest · scoring runs locally, LLM only parses queries and narrates evidence</footer>
+  <footer class="muted">✦ Sparkle Sentinel · hybrid rules + IsolationForest · deterministic scoring, LLM narrates the evidence</footer>
 </main>
 
 <script src="app.js"></script>
