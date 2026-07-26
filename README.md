@@ -8,6 +8,8 @@ escalation action.
 
 Built for Campus Hackathon 2026 by **Team Sparkle**.
 
+**▶ Live demo: <https://sparkle-sentinel-production.up.railway.app>**
+
 ![Architecture](assets/architecture.png)
 
 ## Why agentic
@@ -103,7 +105,12 @@ src/agent/               intent parser (Gemini + offline), planner, orchestrator
 src/tools/               EDA, feature engineering, anomaly detection,
                          risk classification, explanation
 scripts/                 synthetic generator · sampler · smoke test
+notebooks/               ML prototyping notebook (final_prototype.ipynb)
 ```
+
+The detection pipeline was prototyped in
+[`notebooks/final_prototype.ipynb`](notebooks/final_prototype.ipynb)
+([run it on Colab](https://colab.research.google.com/drive/1fmpWu4-drgdzY7oYsAL-NtWCs4r8Dykj?usp=sharing)).
 
 ## AI assistance disclosure
 
