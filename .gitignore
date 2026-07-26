@@ -3,5 +3,6 @@ __pycache__/
 *.pyc
 .env
 data/*.csv
+!data/SAML-D-sample.csv
 data/*.parquet
 .streamlit/secrets.toml
