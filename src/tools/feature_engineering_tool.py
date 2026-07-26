@@ -48,5 +48,15 @@ def engineer_features(df: pd.DataFrame, pattern_type: str = "generic",
     # repeating them is the classic pattern — count them per sender
     data["near_threshold_count"] = data.groupby("Sender_account")["near_threshold_flag"].transform("sum")
 
+    # cash-intensity: many cash deposits/withdrawals per sender (cash-out typologies
+    # use lots of small cash movements that per-txn stats never notice)
+    is_cash = data["Payment_type"].isin(["Cash Deposit", "Cash Withdrawal"]).astype(int)
+    data["cash_txn_count"] = is_cash.groupby(data["Sender_account"]).transform("sum")
+
+    # repeated-amount signature: launderers repeat near-identical amounts
+    # (fan-in/fan-out layering); bucket amounts and count same-bucket txns per sender
+    bucket = (data["Amount"] // 500).astype(int)
+    data["repeated_amount_count"] = data.groupby(["Sender_account", bucket])["Amount"].transform("count")
+
     data = data.drop(columns=["_row_id"])
     return data

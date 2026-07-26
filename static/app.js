@@ -197,20 +197,27 @@ function render(res) {
       cell("Mean amount", st.mean ? fmt(Math.round(st.mean)) : "—") +
       cell("Median amount", st.median ? fmt(Math.round(st.median)) : "—") +
       cell("Max amount", st.max ? fmt(Math.round(st.max)) : "—");
-    const pt = eda.payment_type_dist || null;
-    $("pt-label").hidden = !pt;
-    $("pt-bars").innerHTML = pt
-      ? Object.entries(pt)
-          .sort((a, b) => b[1] - a[1])
-          .map(
-            ([name, share]) => `<div class="pt-bar-row">
-              <span class="pt-name">${name}</span>
-              <div class="pt-track"><div class="pt-fill" style="width:${(share * 100).toFixed(1)}%"></div></div>
-              <span class="pt-val">${(share * 100).toFixed(1)}%</span>
-            </div>`
-          )
-          .join("")
-      : "";
+    const barBlock = (title, entries, valFn) =>
+      entries && Object.keys(entries).length
+        ? `<div class="plan-label kpi-label" style="margin-top:14px">${title}</div>` +
+          Object.entries(entries)
+            .sort((a, b) => b[1] - a[1])
+            .slice(0, 6)
+            .map(([name, v], _, arr) => {
+              const maxV = arr[0][1];
+              return `<div class="pt-bar-row">
+                <span class="pt-name">${name}</span>
+                <div class="pt-track"><div class="pt-fill" style="width:${((v / maxV) * 100).toFixed(1)}%"></div></div>
+                <span class="pt-val">${valFn(v)}</span>
+              </div>`;
+            })
+            .join("")
+        : "";
+    $("pt-label").hidden = true;
+    $("pt-bars").innerHTML =
+      barBlock("Payment type distribution", eda.payment_type_dist, (v) => (v * 100).toFixed(1) + "%") +
+      barBlock("Top sender countries", eda.top_sender_countries, (v) => fmt(v)) +
+      barBlock("Top receiver countries", eda.top_receiver_countries, (v) => fmt(v));
   }
 
   $("results").scrollIntoView({ behavior: "smooth", block: "start" });

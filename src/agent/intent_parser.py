@@ -15,6 +15,8 @@ Parse the user's natural language query into structured JSON with this exact sch
   "last_n_days": integer or null,
   "entity_id": string or null,
   "pattern_type": "structuring" | "layering" | "smurfing" | "generic" | null,
+  "top_n": integer or null,
+  "risk_level": "High" | "Medium" | "Low" | null,
   "filters": {
     "amount_min": number or null,
     "amount_max": number or null,
@@ -32,8 +34,11 @@ Rules:
 - "Find structuring patterns in the last 30 days" -> intent=pattern_search, pattern_type=structuring, last_n_days=30, scope=filtered, requires_eda=false, requires_feature_engineering=true, requires_anomaly_detection=true, requires_explanation=true
 - "Which customers made 10+ transactions under $10,000?" -> intent=aggregation_query, filters.count_min=10, filters.amount_max=10000, requires_eda=false, requires_feature_engineering=false, requires_anomaly_detection=false, requires_explanation=false
 - "Is customer ID X suspicious?" -> intent=single_entity_lookup, entity_id="X", scope=single_entity, requires_eda=false, requires_feature_engineering=true, requires_anomaly_detection=true, requires_explanation=true
-- Broad/general queries -> intent=broad_exploration, scope=full_dataset, all requires_* = true
+- Broad/general suspicion queries -> intent=broad_exploration, scope=full_dataset, all requires_* = true
+- Descriptive/statistics questions with NO suspicion angle ("top sender countries", "payment type distribution", "average transaction amount") -> intent=broad_exploration, requires_eda=true, requires_feature_engineering=false, requires_anomaly_detection=false, requires_explanation=false. If the query mentions risk, suspicious, laundering, fraud or flags in ANY way, it is NOT descriptive — run detection.
+- Requests for transactions at a risk level ("show 5 medium risk transactions", "list high risk items") -> intent=pattern_search, pattern_type=generic, risk_level set, top_n set if given, requires_eda=false, requires_feature_engineering=true, requires_anomaly_detection=true, requires_explanation=true
 - "last N days" phrasing -> set last_n_days, leave date_range null; explicit dates -> date_range
+- "top 10" / "show 15" style result-count requests -> set top_n to that number
 
 Return ONLY valid JSON, no markdown fences, no commentary."""
 
@@ -103,10 +108,22 @@ def _parse_offline(query: str) -> dict:
     parsed = {
         "intent": "broad_exploration", "scope": "full_dataset",
         "date_range": None, "last_n_days": None, "entity_id": None,
-        "pattern_type": None, "filters": dict(_EMPTY_FILTERS),
+        "pattern_type": None, "top_n": None, "risk_level": None,
+        "filters": dict(_EMPTY_FILTERS),
         "requires_eda": True, "requires_feature_engineering": True,
         "requires_anomaly_detection": True, "requires_explanation": True,
     }
+
+    m = re.search(r"(?:top|show|display|list)\s+(?:any\s+|top\s+|me\s+)?(\d+)\b", q)
+    if m:
+        parsed["top_n"] = int(m.group(1))
+
+    m = re.search(r"\b(high|medium|low)[\s-]*risk", q)
+    if m:
+        parsed.update({"intent": "pattern_search", "scope": "filtered",
+                       "pattern_type": "generic", "risk_level": m.group(1).title(),
+                       "requires_eda": False})
+        return parsed
 
     m = re.search(r"last\s+(\d+)\s+days?", q)
     if m:
@@ -148,5 +165,13 @@ def _parse_offline(query: str) -> dict:
     if any(w in q for w in ["flag high-risk", "flag risky", "top suspicious"]):
         parsed.update({"intent": "pattern_search", "scope": "filtered",
                        "pattern_type": "generic", "requires_eda": False})
+        return parsed
+
+    # descriptive/statistics questions: EDA only, no detection tools
+    if any(w in q for w in ["countries", "country", "distribution", "average",
+                            "stats", "summary", "how many", "top sender", "top receiver"]):
+        parsed.update({"requires_feature_engineering": False,
+                       "requires_anomaly_detection": False,
+                       "requires_explanation": False})
 
     return parsed
