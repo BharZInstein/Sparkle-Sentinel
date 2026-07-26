@@ -20,6 +20,9 @@ Transaction data:
 - Amount z-score: {row.get('amount_zscore')}
 - Transaction velocity: {row.get('txn_velocity')}
 - Near-threshold flag: {row.get('near_threshold_flag')}
+- Near-threshold count (sender): {row.get('near_threshold_count')}
+- Cash txn count (sender): {row.get('cash_txn_count')}
+- Repeated similar-amount txns (sender): {row.get('repeated_amount_count')}
 - Cross-border flag: {row.get('cross_border_flag')}
 - Risk level: {row.get('risk_level')}
 

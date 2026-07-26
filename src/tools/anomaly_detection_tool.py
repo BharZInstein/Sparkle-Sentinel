@@ -5,7 +5,7 @@ from sklearn.preprocessing import StandardScaler
 FEATURE_COLS = [
     "txn_frequency", "rolling_amount_sum", "amount_zscore",
     "txn_velocity", "near_threshold_flag", "near_threshold_count",
-    "cross_border_flag"
+    "cash_txn_count", "repeated_amount_count", "cross_border_flag"
 ]
 
 
@@ -16,7 +16,9 @@ def detect_anomalies(df: pd.DataFrame, method: str = "hybrid",
         "txn_frequency": 10,
         "amount_zscore": 2.5,
         "txn_velocity": 3,
-        "near_threshold_count": 3,  # repeated sub-threshold txns = structuring
+        "near_threshold_count": 3,   # repeated sub-threshold txns = structuring
+        "cash_txn_count": 25,        # cash-heavy accounts (cash-out typologies)
+        "repeated_amount_count": 4,  # near-identical amounts repeated = layering
     }
 
     cross_border_rate = data["cross_border_flag"].mean()
@@ -28,9 +30,11 @@ def detect_anomalies(df: pd.DataFrame, method: str = "hybrid",
         (data["txn_velocity"] > thresholds["txn_velocity"]).astype(int) +
         data["near_threshold_flag"] +
         (data["near_threshold_count"] >= thresholds["near_threshold_count"]).astype(int) +
+        (data["cash_txn_count"] >= thresholds["cash_txn_count"]).astype(int) +
+        (data["repeated_amount_count"] >= thresholds["repeated_amount_count"]).astype(int) +
         data["cross_border_flag"] * cross_border_weight
     )
-    max_rule_score = 5 + cross_border_weight
+    max_rule_score = 7 + cross_border_weight
     data["rule_score"] = rule_score
     data["anomaly_score"] = data["rule_score"] / max_rule_score
 
