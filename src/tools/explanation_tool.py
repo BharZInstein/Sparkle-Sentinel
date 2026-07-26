@@ -50,17 +50,53 @@ def explain_flag(row: dict, model: str = GEMINI_MODEL_EXPLANATION, max_retries: 
     return "[Explanation unavailable — rate limited after retries]"
 
 
-def explain_batch(df, top_n: int = 5) -> list:  # reduced default from 20
+def explain_batch(df, top_n: int = 5) -> list:
+    """Explain the top-N flags in ONE Gemini call (a per-flag call with rate-limit
+    sleeps took 15-20s per query; batching brings it to ~2s)."""
+    import json
+
     subset = df.sort_values("anomaly_score", ascending=False).head(top_n)
+    rows = [r.to_dict() for _, r in subset.iterrows()]
+
+    numbered = "\n\n".join(
+        f"FLAG {i + 1}:\n" + _build_reason_prompt(r).split("Transaction data:")[1].rsplit("Return only", 1)[0]
+        for i, r in enumerate(rows)
+    )
+    prompt = (
+        f"For each of the {len(rows)} flagged AML transactions below, write ONE concise sentence "
+        "(max 30 words) explaining why it was flagged, referencing its specific triggering factors. "
+        "Be factual, no hedging. Never mention the flag number; start each sentence with "
+        "'This transaction' or similar.\n\n" + numbered +
+        '\n\nReturn ONLY a JSON array of strings, one per flag, in order. Example: ["reason 1", "reason 2"]'
+    )
+
+    texts = None
+    for attempt in range(2):
+        try:
+            response = client.models.generate_content(
+                model=GEMINI_MODEL_EXPLANATION,
+                contents=prompt,
+                config=types.GenerateContentConfig(max_output_tokens=1200, temperature=0.3,
+                                                   response_mime_type="application/json"),
+            )
+            texts = json.loads(response.text)
+            break
+        except errors.ClientError as e:
+            if e.code == 429:
+                time.sleep(10)
+                continue
+            raise
+        except Exception:
+            break
+
     explanations = []
-    for _, row in subset.iterrows():
+    for i, r in enumerate(rows):
         explanations.append({
-            "Sender_account": row.get("Sender_account"),
-            "Receiver_account": row.get("Receiver_account"),
-            "Amount": row.get("Amount"),
-            "risk_level": row.get("risk_level"),
-            "recommended_action": row.get("recommended_action"),
-            "explanation": explain_flag(row.to_dict()),
+            "Sender_account": r.get("Sender_account"),
+            "Receiver_account": r.get("Receiver_account"),
+            "Amount": r.get("Amount"),
+            "risk_level": r.get("risk_level"),
+            "recommended_action": r.get("recommended_action"),
+            "explanation": texts[i] if texts and i < len(texts) else explain_flag(r),
         })
-        time.sleep(2)  # stay under 5 req/min even with intent-parser calls mixed in
     return explanations
